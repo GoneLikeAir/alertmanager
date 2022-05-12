@@ -394,6 +394,18 @@ func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
 				voc.APIKey = c.Global.VictorOpsAPIKey
 			}
 		}
+		for _, imsc := range rcv.IMSConfigs {
+			if imsc.HTTPConfig == nil {
+				imsc.HTTPConfig = c.Global.HTTPConfig
+			}
+
+			if imsc.APIUrl == nil {
+				imsc.APIUrl = c.Global.IMSAPIUrl
+			}
+			if imsc.UserAuthKey == "" {
+				imsc.UserAuthKey = c.Global.IMSUserAuthKey
+			}
+		}
 		names[rcv.Name] = struct{}{}
 	}
 
@@ -560,6 +572,8 @@ type GlobalConfig struct {
 	WeChatAPICorpID  string     `yaml:"wechat_api_corp_id,omitempty" json:"wechat_api_corp_id,omitempty"`
 	VictorOpsAPIURL  *URL       `yaml:"victorops_api_url,omitempty" json:"victorops_api_url,omitempty"`
 	VictorOpsAPIKey  Secret     `yaml:"victorops_api_key,omitempty" json:"victorops_api_key,omitempty"`
+	IMSAPIUrl        *URL       `yaml:"ims_api_url,omitempty" json:"ims_api_url,omitempty"`
+	IMSUserAuthKey   string     `yaml:"ims_user_auth_key,omitempty" json:"ims_user_auth_key,omitempty"`
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface for GlobalConfig.
@@ -691,6 +705,7 @@ type Receiver struct {
 	WechatConfigs    []*WechatConfig    `yaml:"wechat_configs,omitempty" json:"wechat_configs,omitempty"`
 	PushoverConfigs  []*PushoverConfig  `yaml:"pushover_configs,omitempty" json:"pushover_configs,omitempty"`
 	VictorOpsConfigs []*VictorOpsConfig `yaml:"victorops_configs,omitempty" json:"victorops_configs,omitempty"`
+	IMSConfigs       []*IMSConfig       `yaml:"ims_configs,omitempty" json:"ims_configs,omitempty"`
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface for Receiver.

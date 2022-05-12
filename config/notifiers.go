@@ -16,6 +16,7 @@ package config
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -126,6 +127,17 @@ var (
 		Retry:    duration(1 * time.Minute),
 		Expire:   duration(1 * time.Hour),
 		HTML:     false,
+	}
+
+	// DefaultIMSConfig defines default values for IMS configurations.
+	DefaultIMSConfig = IMSConfig{
+		NotifierConfig: NotifierConfig{
+			VSendResolved: true,
+		},
+		Message:      `{{ template "ims.default.message" . }}`,
+		UseUmgPolicy: 0,
+		AlertWay:     "1",
+		//AlertLevel:   5,
 	}
 )
 
@@ -550,5 +562,44 @@ func (c *PushoverConfig) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	if c.Token == "" {
 		return fmt.Errorf("missing token in Pushover config")
 	}
+	return nil
+}
+
+// IMSConfig configures notifications via IMS.
+type IMSConfig struct {
+	NotifierConfig `yaml:",inline" json:",inline"`
+
+	HTTPConfig *commoncfg.HTTPClientConfig `yaml:"http_config,omitempty" json:"http_config,omitempty"`
+
+	UserAuthKey  string   `yaml:"user_auth_key" json:"user_auth_key"`
+	APIUrl       *URL     `yaml:"api_url" json:"api_url"`
+	Message      string   `yaml:"message,omitempty" json:"message,omitempty"`
+	Receivers    []string `yaml:"receivers" json:"receivers"`
+	UseUmgPolicy int      `yaml:"use_umg_policy,omitempty" json:"use_umg_policy,omitempty"`
+	AlertWay     string   `yaml:"alert_way,omitempty" json:"alert_way,omitempty"`
+	//AlertLevel   int      `yaml:"alert_level,omitempty" json:"alert_level,omitempty"`
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface.
+func (c *IMSConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	*c = DefaultIMSConfig
+	type plain IMSConfig
+	if err := unmarshal((*plain)(c)); err != nil {
+		return err
+	}
+	if len(c.Receivers) > 15 {
+		return fmt.Errorf("receivers cannot more than 15")
+	}
+	//if c.SubsystemId < 1000 {
+	//	return fmt.Errorf("invalid subsystem id")
+	//}
+	ways := strings.Split(strings.Trim(c.AlertWay, ","), ",")
+	for _, w := range ways {
+		i, err := strconv.Atoi(w)
+		if err != nil || (i > 3 || i < 0) {
+			return fmt.Errorf("invalid alert way, supported way: 0(not send), 1(send RTX), 2(send email), 3(send wechat)")
+		}
+	}
+
 	return nil
 }
